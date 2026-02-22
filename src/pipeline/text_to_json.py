@@ -353,17 +353,25 @@ def process_directory(input_dir, output_file):
     return all_chunks
 
 
+import json
+
 def write_jsonl(chunks, output_file):
-    with open(output_file, 'w', encoding='utf-8') as f:
+    path = Path(output_file)
+
+    # 🧙 Ensure directory exists (creates nested folders too)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(path, 'w', encoding='utf-8') as f:
         for chunk in chunks:
             f.write(json.dumps(chunk, ensure_ascii=False) + '\n')
 
     print(f"\n{'═'*55}")
-    print(f"  ✅ Done!  {len(chunks):,} chunks → {output_file}")
+    print(f"  ✅ Done!  {len(chunks):,} chunks → {path}")
     print(f"{'═'*55}")
 
     from collections import Counter
     act_counts = Counter(c["metadata"]["act_name"] for c in chunks)
+
     print("\n  Chunks per Act:")
     for act, count in act_counts.most_common():
         print(f"    {count:>5}  {act}")

@@ -1,0 +1,2 @@
+data/chroma_db/*.sqlite3 filter=lfs diff=lfs merge=lfs -text
+data/processed/embeddings.npz filter=lfs diff=lfs merge=lfs -text
