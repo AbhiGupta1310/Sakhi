@@ -1,0 +1,21 @@
+# Environment files
+.env
+.env.local
+
+# Virtual environment
+sakhi_env/
+
+# Data files (embeddings, JSON, large chunks)
+data/
+*.pkl
+*.jsonl
+
+# Python cache
+__pycache__/
+*.pyc
+
+# MacOS
+.DS_Store
+
+# Logs
+*.log
