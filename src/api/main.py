@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+import os
 import sys
 from pathlib import Path
 
@@ -18,10 +19,10 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Allow CORS for React frontend (Vite defaults to port 5173)
+# Allow CORS for React frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -66,19 +67,37 @@ async def chat_endpoint(request: ChatRequest):
     try:
         print(f"  ❓ API received query: {request.query}")
         
+        # Build chat history
+        history = [msg.model_dump() if hasattr(msg, "model_dump") else msg.dict() for msg in request.chat_history]
+        
+        # Compute clarification_count: count consecutive trailing assistant
+        # messages that end with '?' — these are clarifying questions
+        clarification_count = 0
+        for msg in reversed(history):
+            if msg["role"] == "assistant" and msg["content"].rstrip().endswith("?"):
+                clarification_count += 1
+            elif msg["role"] == "user":
+                continue  # skip user messages when counting
+            else:
+                break  # non-question assistant message = real answer was given
+        
+        print(f"  📊 Chat history: {len(history)} messages, {clarification_count} clarifications so far")
+        
         initial_state = {
             "query": request.query,
             "corrected_query": "",
             "understood_as": "",
             "needs_clarification": False,
             "clarification_question": None,
+            "clarification_count": clarification_count,
+            "is_legal_query": True,
             "search_queries": [],
             "embeddings": [],
             "chunks": [],
             "context": "",
             "answer": "",
             "low_confidence": False,
-            "chat_history": [msg.model_dump() for msg in request.chat_history] if hasattr(request.chat_history[0], "model_dump") else [msg.dict() for msg in request.chat_history] if request.chat_history else []
+            "chat_history": history,
         }
         
         # Invoke LangGraph pipeline
@@ -97,4 +116,5 @@ async def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("src.api.main:app", host="0.0.0.0", port=8000, reload=True)
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("src.api.main:app", host="0.0.0.0", port=port, reload=True)

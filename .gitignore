@@ -6,7 +6,6 @@
 sakhi_env/
 
 # Data files (embeddings, JSON, large chunks)
-data/
 *.pkl
 *.jsonl
 
