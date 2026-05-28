@@ -21,7 +21,7 @@ TOP_K           = 8      # retrieve more chunks — legal Qs often span multiple
 MAX_CONTEXT_CHUNKS = 6   # limit what actually reaches the LLM prompt
 
 # ── Relevance & Confidence ────────────────────────────────────────────────
-RELEVANCE_THRESHOLD = 0.55   # lowered from 0.65 — avoids false "I don't know" on valid Qs
+RELEVANCE_THRESHOLD = 0.40   # lowered from 0.55 for Qwen3 embeddings
 
 # ── LLM Configuration ────────────────────────────────────────────────────
 GROQ_MODEL     = "llama-3.3-70b-versatile"

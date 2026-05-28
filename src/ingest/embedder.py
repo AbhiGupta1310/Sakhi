@@ -48,6 +48,10 @@ class OpenRouterEmbedder:
         self.client = OpenAI(
             base_url="https://openrouter.ai/api/v1",
             api_key=api_key,
+            default_headers={
+                "HTTP-Referer": "https://sakhi-alpha.vercel.app",
+                "X-Title": "Sakhi Legal",
+            }
         )
         self.model = EMBED_MODEL
         logger.info(f"✅ OpenRouterEmbedder ready — model: {self.model}")

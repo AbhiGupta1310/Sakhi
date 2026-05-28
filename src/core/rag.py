@@ -291,6 +291,10 @@ class SakhiResources:
         self.embed_client = OpenAIClient(
             base_url="https://openrouter.ai/api/v1",
             api_key=openrouter_key,
+            default_headers={
+                "HTTP-Referer": "https://sakhi-alpha.vercel.app",
+                "X-Title": "Sakhi Legal",
+            }
         )
         self.embed_model_name = OPENROUTER_EMBED_MODEL
         logger.info("✅ OpenRouter embedder ready — no local model download needed")
