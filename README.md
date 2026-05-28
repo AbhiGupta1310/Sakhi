@@ -1,3 +1,13 @@
+---
+title: Sakhi API
+emoji: ⚖️
+colorFrom: yellow
+colorTo: blue
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 <div align="center">
 
 # Sakhi -- AI Legal Companion for India
