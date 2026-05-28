@@ -4,17 +4,29 @@
 
 # Virtual environment
 sakhi_env/
+.venv/
 
 # Data files (embeddings, JSON, large chunks)
 *.pkl
 *.jsonl
+*.npz
+
+# Generated / derived data (rebuild with migrate_embeddings.py)
+data/chroma_db/
+data/processed/
+data/txt/
 
 # Python cache
 __pycache__/
 *.pyc
+*.pyo
 
 # MacOS
 .DS_Store
 
 # Logs
 *.log
+
+# Node / frontend
+sakhi-ui/node_modules/
+sakhi-ui/dist/

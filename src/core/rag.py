@@ -48,7 +48,7 @@ from langchain_groq import ChatGroq
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from langgraph.graph import StateGraph, END
 import chromadb
-from FlagEmbedding import BGEM3FlagModel
+from openai import OpenAI as OpenAIClient
 
 from src.config import (
     CHROMA_DB_PATH,
@@ -274,19 +274,35 @@ def parse_json_safe(raw_text, fallback=None):
 # RESOURCES
 # ══════════════════════════════════════════════════════════════════════════════
 
+# ── OpenRouter Embedding Model ────────────────────────────────────────────────
+OPENROUTER_EMBED_MODEL = "qwen/qwen3-embedding-8b"   # MTEB #1 multilingual
+
+
 class SakhiResources:
     def __init__(self):
-        logger.info("🔄 Loading BGE-M3 embedding model...")
-        self.embed_model = BGEM3FlagModel('BAAI/bge-m3', use_fp16=True)
-        logger.info("✅ BGE-M3 ready")
+        # ── Embedding client (OpenRouter — no local model!) ──────────────────
+        openrouter_key = os.environ.get("OPENROUTER_API_KEY")
+        if not openrouter_key:
+            raise EnvironmentError(
+                "OPENROUTER_API_KEY is missing from .env.\n"
+                "Get a free key at: https://openrouter.ai/keys"
+            )
+        logger.info(f"🔢 Setting up OpenRouter embedder ({OPENROUTER_EMBED_MODEL})...")
+        self.embed_client = OpenAIClient(
+            base_url="https://openrouter.ai/api/v1",
+            api_key=openrouter_key,
+        )
+        self.embed_model_name = OPENROUTER_EMBED_MODEL
+        logger.info("✅ OpenRouter embedder ready — no local model download needed")
 
+        # ── ChromaDB ─────────────────────────────────────────────────────────
         logger.info("🗄️  Connecting to ChromaDB...")
         client = chromadb.PersistentClient(path=str(CHROMA_DB_PATH))
         self.collection = client.get_collection(COLLECTION_NAME)
         logger.info(f"✅ ChromaDB ready ({self.collection.count():,} chunks)")
 
+        # ── Groq LLMs (3 tuned instances) ────────────────────────────────────
         logger.info("🤖 Connecting to Groq LLM...")
-        # Separate LLMs for different pipeline stages with tuned temperatures
         self.llm_understand = ChatGroq(
             model=GROQ_MODEL,
             temperature=UNDERSTAND_TEMPERATURE,
@@ -461,17 +477,21 @@ def make_rewrite_node(resources: SakhiResources):
 
 
 def make_embed_node(resources: SakhiResources):
-    """Node 3: Embed all search queries in one batch."""
+    """Node 3: Embed all search queries via OpenRouter API (Qwen3-Embedding-8B)."""
     def embed_queries(state: SakhiState) -> SakhiState:
-        n = len(state["search_queries"])
-        logger.info(f"[3/5] 🔢 Embedding {n} search quer{'y' if n == 1 else 'ies'}...")
-        output = resources.embed_model.encode(
-            state["search_queries"],
-            return_dense=True,
-            return_sparse=False,
-            return_colbert_vecs=False
-        )
-        state["embeddings"] = output['dense_vecs'].tolist()
+        queries = state["search_queries"]
+        n = len(queries)
+        logger.info(f"[3/5] 🔢 Embedding {n} quer{'y' if n == 1 else 'ies'} via OpenRouter...")
+        try:
+            response = resources.embed_client.embeddings.create(
+                model=resources.embed_model_name,
+                input=queries,
+            )
+            state["embeddings"] = [item.embedding for item in response.data]
+            logger.info(f"   ✅ Got {n} embeddings (dim={len(state['embeddings'][0])})")
+        except Exception as e:
+            logger.error(f"Embedding failed: {e}")
+            raise
         return state
     return embed_queries
 

@@ -54,10 +54,10 @@ kill_port_process 5173
 # ── Phase 2: Start Backend ───────────────────────────────────────────────────
 
 log_step "Phase 2: Starting Sakhi Backend"
-log_info "Running: uv run python src/api/main.py"
+log_info "Running: uv run python -m src.api.main"
 
 # Start backend in background
-uv run python src/api/main.py > backend.log 2>&1 &
+uv run python -m src.api.main > backend.log 2>&1 &
 BACKEND_PID=$!
 
 log_info "Backend started (PID: $BACKEND_PID). Logging to backend.log"
@@ -67,7 +67,7 @@ log_info "Backend started (PID: $BACKEND_PID). Logging to backend.log"
 log_step "Phase 3: Waiting for RAG Engine Readiness"
 log_info "This involves loading BGE-M3 and ChromaDB. Please wait..."
 
-MAX_RETRIES=45
+MAX_RETRIES=120   # 2 mins — Qwen3 is API-only, startup is now ~5s
 RETRY_COUNT=0
 
 while true; do

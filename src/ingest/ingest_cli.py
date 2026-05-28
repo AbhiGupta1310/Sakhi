@@ -7,7 +7,7 @@ from src.config import (
     EMBEDDINGS_PKL,
 )
 
-from src.ingest.embedder import BGEEmbedder
+from src.ingest.embedder import OpenRouterEmbedder
 from src.ingest.chroma_store import get_collection
 from src.ingest.pipeline import run_ingestion
 from src.ingest.query import run_query
@@ -24,7 +24,7 @@ def main():
 
     args = parser.parse_args()
 
-    embedder = BGEEmbedder()
+    embedder = OpenRouterEmbedder()
     collection = get_collection(args.db_path, args.collection)
 
     if not args.query_only:
